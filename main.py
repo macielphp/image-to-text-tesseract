@@ -1,13 +1,46 @@
 import tkinter as tk 
-from tkinter import filedialog
-from tkinter import messagebox
-from tkinter import ttk
+from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 import pytesseract
-import os
+from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
 import re
+from langdetect import detect
+
+# T5 model in Portuguese by UNICAMP
+MODEL_NAME = "unicamp-dl/ptt5-base-portuguese-vocab"
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+corrector = pipeline("text2text-generation", model=model, tokenizer=tokenizer)
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+def clean_ocr_text(text):
+    text = text.replace('0 ', 'O ')
+    text = re.sub(r'0(\w)', r'O\1', text)
+    text = text.replace('“', '"').replace('”', '"')
+    text = text.replace('‘', "'").replace('’', "'")
+    return text
+
+def detect_language(text):
+    try:
+        return detect(text)
+    except:
+        return 'unknown'
+
+def ai_format_text(text):
+    lines = text.splitlines()
+    corrected_lines = []
+
+    for line in lines:
+        if line.strip():
+            prompt = f"reformule: {line.strip()}"
+            result = corrector(prompt, max_length=512, clean_up_tokenization_spaces=True)
+            generated_text = result[0]['generated_text'].strip().replace("reformule: ", "")
+            corrected_lines.append(generated_text)
+        else:
+            corrected_lines.append('')
+    return '\n'.join(corrected_lines)
 
 class ImageToTextApp:
     def __init__(self, root):
@@ -35,7 +68,7 @@ class ImageToTextApp:
         button_frame = ttk.Frame(root)
         button_frame.pack(pady=10)
 
-        tk.Button(button_frame, text='Converter', command=self.convert_image_to_text).pack(side=tk.LEFT, padx=10)
+        tk.Button(button_frame, text='Convert', command=self.convert_image_to_text).pack(side=tk.LEFT, padx=10)
         tk.Button(button_frame, text='Reset', command=self.reset).pack(side=tk.LEFT, padx=10)
 
     def load_image(self):
@@ -49,30 +82,21 @@ class ImageToTextApp:
 
     def convert_image_to_text(self):
         if self.image_path:
-            try: 
+            try:
                 text = pytesseract.image_to_string(Image.open(self.image_path))
-                formatted_text = self.format_text(text)
+                text = clean_ocr_text(text)
+                formatted_text = ai_format_text(text)
                 self.text_area.delete('1.0', tk.END)
                 self.text_area.insert(tk.END, formatted_text)
             except Exception as e:
-                messagebox.showerror('Erro', f'Converting image error: {e}')
-        else: 
-            messagebox.showwarning('Alert', 'No image selected.')
-    
+                messagebox.showerror('Error', f'Error converting image: {e}')
+        else:
+            messagebox.showwarning('Warning', 'No image selected.')
+
     def reset(self):
         self.image_path = None
         self.image_label.config(image='')
         self.text_area.delete('1.0', tk.END)
-
-    def format_text(self, raw_text):
-        text = re.sub('r[ ]{2,}', ' ', raw_text)
-        text = re.sub(r'\n{2,}', '\n', text)
-
-        text = re.sub(r"(\w+)-\n(\w+)", r"\1\2", text)
-
-        text = '\n'.join(line.capitalize() for line in text.splitlines())
-
-        return text.strip()
 
 if __name__ == '__main__':
     root = tk.Tk()
