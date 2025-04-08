@@ -5,6 +5,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import pytesseract
 import os
+import re
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -50,8 +51,9 @@ class ImageToTextApp:
         if self.image_path:
             try: 
                 text = pytesseract.image_to_string(Image.open(self.image_path))
+                formatted_text = self.format_text(text)
                 self.text_area.delete('1.0', tk.END)
-                self.text_area.insert(tk.END, text)
+                self.text_area.insert(tk.END, formatted_text)
             except Exception as e:
                 messagebox.showerror('Erro', f'Converting image error: {e}')
         else: 
@@ -61,6 +63,16 @@ class ImageToTextApp:
         self.image_path = None
         self.image_label.config(image='')
         self.text_area.delete('1.0', tk.END)
+
+    def format_text(self, raw_text):
+        text = re.sub('r[ ]{2,}', ' ', raw_text)
+        text = re.sub(r'\n{2,}', '\n', text)
+
+        text = re.sub(r"(\w+)-\n(\w+)", r"\1\2", text)
+
+        text = '\n'.join(line.capitalize() for line in text.splitlines())
+
+        return text.strip()
 
 if __name__ == '__main__':
     root = tk.Tk()
