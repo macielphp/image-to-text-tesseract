@@ -1,6 +1,7 @@
 import tkinter as tk 
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 from PIL import Image, ImageTk
 import pytesseract
 import os
@@ -11,31 +12,37 @@ class ImageToTextApp:
     def __init__(self, root):
         self.root = root
         self.root.title('Image To Text')
-        self.root.geometry('600x700')
+        self.root.geometry('700x800')
+        self.root.configure(bg='#f0f4f8')
+
         self.image_path = None
 
-        tk.Label(root, text='Image To Text', font=('Helvetica', 18, 'bold')).pack(pady=10)
+        style = ttk.Style()
+        style.configure('TButton', font=('Segoe UI', 10), padding=6)
+        style.configure('TLabel', font=('Segoe UI', 12), background='#f0f4f8')
 
-        tk.Button(root, text='Select Image', command=self.load_image).pack(pady=10)
+        ttk.Label(root, text='🖼️ Image To Text', font=('Segoe UI', 18, 'bold')).pack(pady=20)
 
-        self.image_label = tk.Label(root)
+        tk.Button(root, text='Select Image', bg='#FFF000', fg='#000000', font=('Segoe UI', 10), command=self.load_image).pack(pady=10)
+
+        self.image_label = ttk.Label(root)
         self.image_label.pack(pady=10)
 
-        self.text_area = tk.Text(root, height=15, wrap=tk.WORD)
-        self.text_area.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        self.text_area = tk.Text(root, height=15, font=('Consolas', 11), wrap=tk.WORD, relief=tk.GROOVE, borderwidth=2)
+        self.text_area.pack(padx=20, pady=10, fill=tk.BOTH, expand=True)
 
-        button_frame = tk.Frame(root)
+        button_frame = ttk.Frame(root)
         button_frame.pack(pady=10)
 
-        tk.Button(button_frame, text='Converter', command=self.convert_image_to_text).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text='Reset', command=self.reset).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text='Converter', command=self.convert_image_to_text).pack(side=tk.LEFT, padx=10)
+        tk.Button(button_frame, text='Reset', command=self.reset).pack(side=tk.LEFT, padx=10)
 
     def load_image(self):
         file_path = filedialog.askopenfilename(filetypes=[('Image Files', '*.png *.jpg *.jpeg *.bmp')])
         if file_path:
             self.image_path = file_path
             img = Image.open(file_path)
-            img.thumbnail((400, 400))
+            img.thumbnail((500, 500))
             self.tk_image = ImageTk.PhotoImage(img)
             self.image_label.config(image=self.tk_image)
 
@@ -53,7 +60,7 @@ class ImageToTextApp:
     def reset(self):
         self.image_path = None
         self.image_label.config(image='')
-        self.text_area.delete('1.o', tk.END)
+        self.text_area.delete('1.0', tk.END)
 
 if __name__ == '__main__':
     root = tk.Tk()
