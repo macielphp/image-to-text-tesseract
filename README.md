@@ -1,5 +1,5 @@
 # 🖼️ Image to Text Converter (Desktop App)
-
+<img src="./public/image-to-text-banner.png" alt="project's banner" />
 This is a simple desktop application built with Python that allows users to extract text from images using Optical Character Recognition (OCR). It's perfect for practicing Python and learning how to build graphical user interfaces.
 
 ## 💡 Features
